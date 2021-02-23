@@ -1,0 +1,124 @@
+
+model{
+
+
+for (pp in 1:P) {
+
+#1st observation
+Y[pp,1,1:D] ~ dmnorm(mus1,prec1)
+
+for(timePoint in Tmiss[pp,1:nmiss[pp]]){
+mus[pp,timePoint,1:D] <- intercept[pp,1:D] + AR[pp,1:D,1:D] %*% (Y[pp, timePoint-1,1:D] - intercept[pp,1:D])
+Y[pp, timePoint, 1] ~ dnorm(mus[pp, timePoint, 1], pow(sd_noise[pp,1],-2))
+Y[pp, timePoint, 2] ~ dnorm(mus[pp, timePoint, 2], pow(sd_noise[pp,2],-2))
+}
+
+for(timePoint in Tseen[pp,2:nseen[pp]]){
+mus[pp,timePoint,1:D] <- intercept[pp,1:D] + AR[pp,1:D,1:D] %*% (Y[pp, timePoint-1,1:D] - intercept[pp,1:D])
+Y[pp,timePoint,1:D] ~ dmnorm(mus[pp,timePoint,1:D], prec_VAR[pp,1:D,1:D])
+}
+
+# missing data model
+for (tt in 1:TimePoint[pp]){
+for(dd in 1:D){
+logodds[pp,tt,dd] <- lambda[1,dd]+lambda[2,dd]*Y[pp,tt,1]+lambda[3,dd]*Y[pp,tt,2]
+pr[pp,tt,dd] <- exp(logodds[pp,tt,dd])/(1+exp(logodds[pp,tt,dd]))
+R[pp,tt,dd] ~ dbern(pr[pp,tt,dd])
+}
+} # close loop over time points
+
+
+# Specify hyperpriors for person-level means
+for (dd in 1:D){
+muInter[pp,dd] <- sum(CoeffInter[1:nrCoeffInter,dd]*AforInter[pp,1:nrCoeffInter])   
+
+
+logS_Means[pp,dd] <- sum(CoefflogSD_VAR[1:nrCoefflogSD_VAR,dd]*AforlogSD_VAR[pp,1:nrCoefflogSD_VAR])     
+sd_noise[pp, dd] <- exp(logSD_VAR[pp, dd])
+
+
+for (dd2 in 1:D){ 
+muAR[pp,dd,dd2] <- sum(CoeffAR[1:nrCoeffAR,dd,dd2]*AforAR[pp,1:nrCoeffAR])   
+} #close loop over dd2 (dimensions)
+} #close loop over dd (dimensions)
+
+
+
+R_Means[pp] <- sum(Coeffcorr_VAR[1:nrCoeffcorr_VAR,1]*Aforcorr_VAR[pp,1:nrCoeffcorr_VAR])
+
+
+#Correlation matrix
+corr_noise[pp] = (exp(2*Fisher_corr_noise[pp])-1)/ (exp(2*Fisher_corr_noise[pp])+1)  
+
+
+
+#covariance matrix, Sigma_VAR
+Sigma_VAR[pp,1,1] = sd_noise[pp, 1] * sd_noise[pp, 1]
+Sigma_VAR[pp,2,2] = sd_noise[pp, 2] * sd_noise[pp, 2]
+Sigma_VAR[pp,1,2] = sd_noise[pp, 1] * corr_noise[pp] * sd_noise[pp,2] 
+Sigma_VAR[pp,2,1] = Sigma_VAR[pp,1,2]
+
+prec_VAR[pp,1:D,1:D] <- inverse(Sigma_VAR[pp,1:D,1:D])
+
+bmu[pp,1:2] = muInter[pp,1:2];
+bmu[pp,3] = muAR[pp,1,1];
+bmu[pp,4] = muAR[pp,2,2];
+bmu[pp,5] = muAR[pp,1,2];
+bmu[pp,6] = muAR[pp,2,1];
+bmu[pp,7:8] = logS_Means[pp,1:2];
+bmu[pp,9] = R_Means[pp];
+b[pp,1:nrW] ~ dmnorm(bmu[pp,1:nrW],bpre[1:nrW,1:nrW]); 
+intercept[pp,1] = b[pp,1];
+intercept[pp,2] = b[pp,2];
+AR[pp,1,1] = b[pp,3];
+AR[pp,2,2] = b[pp,4];
+AR[pp,1,2] = b[pp,5];
+AR[pp,2,1] = b[pp,6];
+logSD_VAR[pp,1] = b[pp,7];
+logSD_VAR[pp,2] = b[pp,8];
+Fisher_corr_noise[pp] = b[pp,9];
+} #close loop over persons
+
+
+# PRIORS
+
+#regression coefficients
+for (cov in 1:nrCoeffInter){
+for (dd in 1:D){
+CoeffInter[cov,dd] ~ dnorm(0, 1) 
+}}
+for (cov in 1:nrCoeffAR){
+for (dd in 1:D){
+for (dd2 in 1:D) {
+CoeffAR[cov,dd,dd2] ~ dnorm(0, 1)
+}}}
+for (cov in 1:nrCoefflogSD_VAR){
+for (dd in 1:D){
+CoefflogSD_VAR[cov,dd] ~ dnorm(0, 1) 
+}}
+for (cov in 1:nrCoeffcorr_VAR){
+Coeffcorr_VAR[cov,1] ~ dnorm(0, 1)
+}
+
+# priors on parameters in the missing data model
+for(kk in 1:3){
+for(dd in 1:D){
+lambda[kk,dd] ~ dnorm(0, 1)
+}}
+
+bpre[1:nrW,1:nrW] ~ dwish(W,nrW+3)
+
+bcov[1:nrW,1:nrW] <- inverse(bpre[1:nrW,1:nrW])
+
+
+sigmaInter[1] = sqrt(bcov[1,1])
+sigmaInter[2] = sqrt(bcov[2,2])
+sigmaAR[1,1] = sqrt(bcov[3,3])
+sigmaAR[2,2] = sqrt(bcov[4,4])
+sigmaAR[1,2] = sqrt(bcov[5,5])
+sigmaAR[2,1] = sqrt(bcov[6,6])
+logS_SD[1] = sqrt(bcov[7,7])
+logS_SD[2] = sqrt(bcov[8,8])
+R_SD = sqrt(bcov[9,9])
+}
+

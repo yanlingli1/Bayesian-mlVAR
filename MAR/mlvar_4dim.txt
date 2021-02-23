@@ -1,0 +1,110 @@
+
+model{
+
+
+for (pp in 1:P) {
+
+#1st observation
+Y[pp,1,1:D] ~ dmnorm(mus1,prec1)
+
+
+for(timePoint in Tmiss[pp,1:nmiss[pp]]){
+mus[pp,timePoint,1:D] <- intercept[pp,1:D] + AR[pp,1:D,1:D] %*% (Y[pp, timePoint-1,1:D] - intercept[pp,1:D])
+Y[pp, timePoint, 1] ~ dnorm(mus[pp, timePoint, 1], pow(sd_noise[pp,1],-2))
+Y[pp, timePoint, 2] ~ dnorm(mus[pp, timePoint, 2], pow(sd_noise[pp,2],-2))
+}
+
+for(timePoint in Tseen[pp,2:nseen[pp]]){
+mus[pp,timePoint,1:D] <- intercept[pp,1:D] + AR[pp,1:D,1:D] %*% (Y[pp, timePoint-1,1:D] - intercept[pp,1:D])
+Y[pp,timePoint,1:D] ~ dmnorm(mus[pp,timePoint,1:D], prec_VAR[pp,1:D,1:D])
+}
+
+
+
+# Specify hyperpriors for person-level means
+for (dd in 1:D){
+muInter[pp,dd] <- sum(CoeffInter[1:nrCoeffInter,dd]*AforInter[pp,1:nrCoeffInter])    
+
+
+logS_Means[pp,dd] <- sum(CoefflogSD_VAR[1:nrCoefflogSD_VAR,dd]*AforlogSD_VAR[pp,1:nrCoefflogSD_VAR])   
+logSD_VAR[pp, dd] ~ dnorm(logS_Means[pp,dd],pow(logS_SD[dd],-2))  
+sd_noise[pp, dd] <- exp(logSD_VAR[pp, dd])
+
+
+for (dd2 in 1:D){ 
+muAR[pp,dd,dd2] <- sum(CoeffAR[1:nrCoeffAR,dd,dd2]*AforAR[pp,1:nrCoeffAR])  
+} #close loop over dd2 (dimensions)
+} #close loop over dd (dimensions)
+
+
+bmu[pp,1] = muInter[pp,1]
+bmu[pp,2] = muInter[pp,2]
+bmu[pp,3] = muAR[pp,1,1]
+bmu[pp,4] = muAR[pp,2,2]
+b[pp,1:nrW] ~ dmnorm(bmu[pp,1:nrW],bpre[1:nrW,1:nrW]) 
+intercept[pp,1] = b[pp,1]
+intercept[pp,2] = b[pp,2]
+AR[pp,1,1] = b[pp,3]
+AR[pp,2,2] = b[pp,4]
+
+AR[pp, 1, 2] ~ dnorm(muAR[pp,1,2],pow(sigmaAR[1, 2],-2))
+AR[pp, 2, 1] ~ dnorm(muAR[pp,2,1],pow(sigmaAR[2, 1],-2))
+
+R_Means[pp] <- sum(Coeffcorr_VAR[1:nrCoeffcorr_VAR,1]*Aforcorr_VAR[pp,1:nrCoeffcorr_VAR])
+Fisher_corr_noise[pp] ~ dnorm(R_Means[pp], pow(R_SD,-2))
+
+#Correlation matrix
+corr_noise[pp] = (exp(2*Fisher_corr_noise[pp])-1)/ (exp(2*Fisher_corr_noise[pp])+1)  
+
+
+
+#covariance matrix, Sigma_VAR
+Sigma_VAR[pp,1,1] = sd_noise[pp, 1] * sd_noise[pp, 1]
+Sigma_VAR[pp,2,2] = sd_noise[pp, 2] * sd_noise[pp, 2]
+Sigma_VAR[pp,1,2] = sd_noise[pp, 1] * corr_noise[pp] * sd_noise[pp,2] 
+Sigma_VAR[pp,2,1] = Sigma_VAR[pp,1,2]
+
+prec_VAR[pp,1:D,1:D] <- inverse(Sigma_VAR[pp,1:D,1:D])
+
+} #close loop over persons
+
+
+# PRIORS
+
+#regression coefficients
+for (cov in 1:nrCoeffInter){
+for (dd in 1:D){
+CoeffInter[cov,dd] ~ dnorm(0, 1) 
+}}
+for (cov in 1:nrCoeffAR){
+for (dd in 1:D){
+for (dd2 in 1:D) {
+CoeffAR[cov,dd,dd2] ~ dnorm(0, 1)
+}}}
+for (cov in 1:nrCoefflogSD_VAR){
+for (dd in 1:D){
+CoefflogSD_VAR[cov,dd] ~ dnorm(0, 1) 
+}}
+for (cov in 1:nrCoeffcorr_VAR){
+Coeffcorr_VAR[cov,1] ~ dnorm(0, 1)
+}
+
+
+#standard deviation of random effects
+for (dd in 1:D) {
+logS_SD[dd] ~ dunif(0, 1)
+}
+sigmaAR[1,2] ~ dunif(0, 1)
+sigmaAR[2,1] ~ dunif(0, 1)
+R_SD ~ dunif(0, 1)
+
+bpre[1:nrW,1:nrW] ~ dwish(W,nrW+3)
+
+bcov[1:nrW,1:nrW] <- inverse(bpre[1:nrW,1:nrW])
+
+sigmaInter[1] = sqrt(bcov[1,1])
+sigmaInter[2] = sqrt(bcov[2,2])
+sigmaAR[1,1] = sqrt(bcov[3,3])
+sigmaAR[2,2] = sqrt(bcov[4,4])
+}
+
