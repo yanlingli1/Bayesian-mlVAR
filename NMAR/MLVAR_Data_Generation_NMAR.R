@@ -1,5 +1,5 @@
 # This script generates simulated datasets under the low-stability (i.e., low autocorrelation) condition. 
-# Missing data are generated following the missing at random (MAR) mechanism.
+# Missing data are generated following the not missing at random (NMAR) mechanism.
 # The data used in the model fitting with Stan and JAGS are saved in the ".Rdata" files; 
 # The data used in the model fitting with Mplus are saved in the ".dat" files.
 

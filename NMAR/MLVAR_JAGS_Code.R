@@ -39,7 +39,7 @@ for(pp in 1:N){
 R <- ifelse(is.na(Y_obs),1,0) # missing indicators (1: missing)
 
 # the scale matrix of the IW distribution
-W = diag(c(0.5,0.5,0.1,0.1),4)
+W = diag(c(0.5,0.5,0.1,0.1,0.1,0.1,0.5,0.5,0.5),9)
 # prior for the 1st observation
 mus1 = c(0,0)
 prec1 = diag(2)
@@ -56,7 +56,8 @@ jags_data <- list(Y = Y_obs,
              nrCoeffInter= dim(AforInter)[2], 
              nrCoeffAR = dim(AforAR)[2], 
              nrCoefflogSD_VAR = dim(AforlogSD_VAR)[2],
-             P = dim(Y_obs)[1], 
+             P = dim(Y_obs)[1],
+             TimePoint = rep(dim(Y)[2],dim(Y)[1]),
              D = dim(Y_obs)[3], 
              nmiss = nmiss, 
              nseen = nseen, 

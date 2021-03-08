@@ -102,11 +102,11 @@ b[pp,1:nrW] ~ multi_normal_cholesky(bmu[pp,1:nrW],diag_pre_multiply(sigma, L));
 //Y_merge[pp, 1,1:D] ~ multi_normal(b[pp,1:2],Sigma_VAR[pp]);
 Y_merge[pp,1,1:D] ~ multi_normal(mus1, sigma_VAR_1);
 
-for (timePoint in 2:T){
+for (tt in 2:T){
 
-mus[pp,timePoint,1] = b[pp,1] + b[pp,3] * (Y_merge[pp,timePoint-1,1] - b[pp,1]) + b[pp,5] * (Y_merge[pp,timePoint-1,2] - b[pp,2]); //Mplus model
-mus[pp,timePoint,2] = b[pp,2] + b[pp,6] * (Y_merge[pp,timePoint-1,1] - b[pp,1]) + b[pp,4] * (Y_merge[pp,timePoint-1,2] - b[pp,2]); //Mplus model
-Y_merge[pp,timePoint] ~ multi_normal(mus[pp,timePoint], Sigma_VAR[pp]); 
+mus[pp,tt,1] = b[pp,1] + b[pp,3] * (Y_merge[pp,tt-1,1] - b[pp,1]) + b[pp,5] * (Y_merge[pp,tt-1,2] - b[pp,2]); 
+mus[pp,tt,2] = b[pp,2] + b[pp,6] * (Y_merge[pp,tt-1,1] - b[pp,1]) + b[pp,4] * (Y_merge[pp,tt-1,2] - b[pp,2]); 
+Y_merge[pp,tt] ~ multi_normal(mus[pp,tt], Sigma_VAR[pp]); 
 
 // missing data model
 for(dd in 1:D){

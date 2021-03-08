@@ -5,6 +5,11 @@ source("postcalc.R")
 #rstan_options(auto_write = TRUE)
 options(mc.cores = parallel::detectCores())
 
+r1=1
+N=100
+O=60
+high=0
+
 
 if(high==0){
   load(paste0("SimulatedData_low_N",N,"T",O,"_",r1,".Rdata"))
