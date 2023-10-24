@@ -4,7 +4,7 @@ This README file lists and describes the simulation materials and other reproduc
 
 Reference:
 
-Li, Y., Wood, J., Ji, L., Chow, S.-M., & Oravecz, Z. (2022). Fitting multilevel vector autoregressive models in Stan, JAGS, and Mplus. *Structural equation modeling: a multidisciplinary journal, 29*(3), 452-475, DOI:10.1080/10705511.2021.1911657.
+Li, Y., Wood, J., Ji, L., Chow, S.-M., & Oravecz, Z. (2022). Fitting multilevel vector autoregressive models in Stan, JAGS, and Mplus. *Structural equation modeling: a multidisciplinary journal, 29*(3), 452-475, DOI:[10.1080/10705511.2021.1911657](https://doi.org/10.1080/10705511.2021.1911657).
 
 The "MAR" folder contains R code used in our simulation study in which missing data geneation followed the missing at random (MAR) mechanism. The simulation materials include:
 - *MLVAR_Data_Generation_MAR.R*: code for simulating data based on an mlVAR model and generating missing data following the MAR mechanism
